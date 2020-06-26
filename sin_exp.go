@@ -1,5 +1,5 @@
 // Program sin_exp generates data for the R exercise. It takes a
-// Matrikelnummer as input for the random see and uses it to set
+// Matrikelnummer as input for the random seed and uses it to set
 // phase, frequency, and decay rate in a sin (2 pi x + phi) * exp (-bx)
 // function.
 // If the secretstring is set in the environment, the chosen values will
@@ -115,19 +115,17 @@ func noise(xypairs []xypair, fracnoise float32) {
 
 // writeXy writes the xy pairs to outfile or standard output if outfile is
 // not defined. If the nowriteFlag is set, we just return.
-func writeXy(outfile *string, xypairs []xypair, nowriteFlag *bool) error {
+func writeXy(outfile *string, xypairs []xypair, nowriteFlag *bool) (err error) {
 	if *nowriteFlag {
 		return nil
 	}
 	var fp *os.File
 	if *outfile != "" {
 		fmt.Println("Writing results to ", *outfile)
-		_, err := os.Stat(*outfile)
-		if err == nil {
+		if _, err := os.Stat(*outfile); err == nil {
 			fmt.Fprintln(os.Stderr, "File", *outfile, "exists... Overwriting it.")
 		}
-		fp, err = os.Create(*outfile)
-		if err != nil {
+		if fp, err = os.Create(*outfile); err != nil {
 			return err
 		}
 		defer fp.Close()
@@ -157,12 +155,12 @@ func mymain() int {
 			seed = 1
 		} else {
 			s := flag.Arg(0)
-			i, err := strconv.ParseInt(s, 10, 64)
-			if err != nil {
+			if i, err := strconv.ParseInt(s, 10, 64); err != nil {
 				fmt.Println(err)
 				return (exitFailure)
+			} else {
+				seed = i
 			}
-			seed = i
 			if seed > 9999999 || seed < 111111 {
 				fmt.Fprintln(os.Stderr, s, "is probably not a valid matrikelnummer")
 				return (exitFailure)
@@ -180,8 +178,7 @@ func mymain() int {
 	fillX(xypairs, xmax)
 	makeSinExp(xypairs, phase, freq, decay)
 	noise(xypairs, noisefrac)
-	err := writeXy(outfile, xypairs, nowriteFlag)
-	if err != nil {
+	if err := writeXy(outfile, xypairs, nowriteFlag); err != nil {
 		fmt.Fprintln(os.Stderr, "Failed writing to", *outfile, err)
 		return (exitFailure)
 	}
